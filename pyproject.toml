@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aphelion-plugin-sdk"
+version = "0.1.0"
+description = "Public SDK for Aphelion editor plugins (video now; audio later)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "LicenseRef-Proprietary"
+authors = [{ name = "youthx" }]
+keywords = ["aphelion", "plugin", "sdk", "video", "audio"]
+dependencies = [
+    "numpy>=1.26.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/youthx/aphelion-editor"
+Repository = "https://github.com/youthx/aphelion-editor"
+
+[project.optional-dependencies]
+dev = ["build>=1.2.0", "pytest>=8.0.0", "mypy>=1.8.0"]
+
+[tool.setuptools.packages.find]
+include = ["aphelion_sdk*"]
+exclude = ["examples*"]
+
+[tool.setuptools.package-data]
+aphelion_sdk = ["py.typed"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+mypy_path = "../aphelion-editor/src"
+explicit_package_bases = true
+namespace_packages = true
+
+[tool.pyrefly]
+search-path = [".", "../aphelion-editor/src"]
+project-includes = ["aphelion_sdk", "examples"]
+project-excludes = [".venv", "build", "dist"]
+
+[tool.pyright]
+include = ["aphelion_sdk", "examples"]
+extraPaths = [".", "../aphelion-editor/src"]
+exclude = [".venv", "build", "dist"]
+pythonVersion = "3.11"
+

@@ -1,0 +1,3 @@
+search-path = [".", "../aphelion-editor/src"]
+project-includes = ["aphelion_sdk", "examples"]
+project-excludes = [".venv", "build", "dist"]

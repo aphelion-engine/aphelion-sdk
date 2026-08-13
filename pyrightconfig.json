@@ -1,0 +1,6 @@
+{
+  "include": ["aphelion_sdk", "examples"],
+  "extraPaths": [".", "../aphelion-editor/src"],
+  "exclude": [".venv", "build", "dist"],
+  "pythonVersion": "3.11"
+}
