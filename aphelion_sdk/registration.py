@@ -44,6 +44,18 @@ def get_registered_plugins() -> tuple[type[Plugin], ...]:
     return tuple(_registered_plugins)
 
 
+def clear_registered_plugins() -> None:
+    """Remove every in-process ``@register_plugin`` entry.
+
+    Used by the host when reloading drop-in plugin modules so stale classes
+    are not rediscovered beside the freshly imported ones.
+
+    Side effects:
+        Clears the process-wide registration list. Does not unload modules.
+    """
+    _registered_plugins.clear()
+
+
 def discover_installed_plugins() -> tuple[type[Plugin], ...]:
     """Discover plugin classes exposed by installed packages.
 

@@ -7,6 +7,7 @@ from typing import ClassVar
 
 from aphelion_sdk.plugin import Plugin
 from aphelion_sdk.types import Frame
+from aphelion_sdk.widgets.host import WidgetHost, WidgetView
 from core.nodes.frame_base import FrameEffectNode
 
 
@@ -61,3 +62,32 @@ class VideoEffectPlugin(Plugin, FrameEffectNode):
             The processed frame, same shape and dtype as ``frame``.
         """
         raise NotImplementedError
+
+    def build_property_panel(self, host: WidgetHost) -> WidgetView | None:
+        """Optional extra inspector section below generated property rows.
+
+        Parameters:
+            host: Editor-provided factory bound to this node instance.
+
+        Returns:
+            A view from ``host.create_view()``, or ``None`` for no extra UI.
+        """
+        del host
+        return None
+
+    def build_property_qt_widget(
+        self,
+        parent: object,
+        host: WidgetHost,
+    ) -> object | None:
+        """Advanced: return a PyQt6 ``QWidget`` for the inspector section.
+
+        Parameters:
+            parent: Host ``QWidget`` that should own the result.
+            host: Bound to this node instance.
+
+        Returns:
+            A ``QWidget``, or ``None`` to use ``build_property_panel``.
+        """
+        del parent, host
+        return None

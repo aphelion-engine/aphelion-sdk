@@ -1,38 +1,27 @@
 # Aphelion Plugin SDK
 
-Public API for writing Aphelion plugins. This package lives beside
-`aphelion-editor` (not inside it). Plugins run **inside the editor process**
-and import editor internals through this SDK only.
+Public API for plugins that run **inside Aphelion Editor**. This package sits beside `aphelion-editor`, not inside it.
 
-Video effects are supported now. Audio plugin bases will land in
-`aphelion_sdk.audio` later.
+Import **`aphelion_sdk` only**. Never import `core`, `effects`, `render`, or `ui`.
 
-Authors must only `import aphelion_sdk`. Never import `core`, `effects`,
-`render`, `ui`, or any other internal editor package.
+Video effects are available now (`VideoEffectPlugin`). Audio bases will land under `aphelion_sdk.audio` later.
 
-## Installation
+Version **0.1.0**. Python **3.11+**. Distribution name **`aphelion-sdk`**.
 
-From the `aphelion-engine` root, with a virtual environment active:
+## Install
+
+From the `aphelion-engine` root, with a venv active:
 
 ```bash
 pip install -e ./aphelion-editor
 pip install -e ./aphelion-sdk
 ```
 
-`aphelion-editor` requires this package, so installing the editor from
-`aphelion-editor/` also pulls in `../aphelion-sdk`.
-
-Build a wheel (from the engine root):
+Installing the editor already depends on this package (`aphelion-sdk @ file:../aphelion-sdk`).
 
 ```bash
-python -m build aphelion-sdk
-pip install aphelion-sdk/dist/aphelion_plugin_sdk-*.whl
-```
-
-Or from this directory:
-
-```bash
-python -m build
+aphelion-sdk --version
+python -m aphelion_sdk --help
 ```
 
 ## Quick start
@@ -54,7 +43,6 @@ class GrayscaleEffect(aphelion_sdk.VideoEffectPlugin):
             aphelion_sdk.slider_property(
                 100, 0, 100,
                 label="Amount",
-                description="How much to desaturate the frame.",
                 suffix="%",
             ),
         )
@@ -74,36 +62,32 @@ class GrayscaleEffect(aphelion_sdk.VideoEffectPlugin):
         return frame * (1.0 - amount) + gray * amount
 ```
 
-See `examples/grayscale_effect.py` for the full runnable example.
+Drop the file in the editor's `plugins/` or `userdata/plugins/`, or pack a wheel (below). Time-independent effects should name the unused argument `_frame_num`.
 
-If an effect does not use time, name the second argument `_frame_num`.
-Time-based effects (grain, flicker, strobe) should keep `frame_num` and
-read it.
+Examples:
 
-## Registering a plugin
+- [`examples/grayscale_effect.py`](examples/grayscale_effect.py)
+- [`examples/effect_with_widget.py`](examples/effect_with_widget.py) — dialog + panel via `widgets = (...)`
 
-1. **Drop-in files** — put a `.py` module in the editor's `plugins/` or
-   `userdata/plugins/`. The editor imports each file at boot.
-2. **In-process registration** — `@aphelion_sdk.register_plugin` on a
-   `Plugin` subclass.
-3. **Installed packages** — advertise the class under `aphelion.plugins`:
+## Documentation
 
-```toml
-[project.entry-points."aphelion.plugins"]
-grayscale = "my_plugin_package.grayscale:GrayscaleEffect"
+| Guide | Contents |
+|---|---|
+| [Authoring](docs/authoring.md) | Effect class, properties, discovery rules |
+| [Widgets](docs/widgets.md) | Panels, dialogs, primitives, PyQt6 |
+| [API reference](docs/api.md) | Public symbols |
+| [Packaging](docs/packaging.md) | `aphelion-sdk build`, entry points, drop-in install |
+| [Editor plugins](../aphelion-editor/docs/plugins.md) | How the host loads and reloads plugins |
+
+## Package a plugin
+
+```bash
+aphelion-sdk build examples/grayscale_effect.py -o dist
+pip install dist/aphelion_plugin_grayscale-*.whl
 ```
 
-## API surface
+Entry point group: `aphelion.plugins`. Widgets are declared on the plugin (`widgets = (MyDialog, MyPanel)`); they are not registered on their own.
 
-| Symbol | Purpose |
-|---|---|
-| `Plugin` | Media-agnostic metadata base. Do not subclass directly. |
-| `VideoEffectPlugin` | Unary video frame effect (`plugin_kind = "video"`). |
-| `Frame` | Video frame buffer (`HxWx3` `float32`, `[0, 1]`). |
-| `ColorRgb` | RGB property (`tuple[int, int, int]`, 0-255). |
-| `slider_property`, `number_property`, `toggle_property`, `text_property`, `color_property`, `choice_property` | Property builders. |
-| `register_plugin` | Decorator for in-process discovery. |
-| `get_registered_plugins` | Classes registered via `register_plugin`. |
+## License
 
-Audio plugin types are not exported yet (`aphelion_sdk.audio` is a reserved
-package).
+Proprietary (`LicenseRef-Proprietary` in `pyproject.toml`).

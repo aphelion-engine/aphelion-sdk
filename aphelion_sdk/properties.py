@@ -16,11 +16,12 @@ from core.nodes.property_factory import color_property as _color_property
 from core.nodes.property_factory import number_property as _number_property
 from core.nodes.property_factory import slider_property as _slider_property
 from core.nodes.property_factory import text_property as _text_property
+from core.nodes.property_factory import custom_property as _custom_property
 from core.nodes.property_factory import toggle_property as _toggle_property
 
 # Opaque handle returned by every builder below and accepted by
 # ``Node.set_property``. Plugin authors never construct this directly.
-PluginProperty = NodeProperty
+PluginProperty: type[NodeProperty] = NodeProperty
 
 _DEFAULT_GROUP: str = "General"
 _DEFAULT_PRIORITY: int = 100
@@ -121,6 +122,38 @@ def color_property(
     """Create an RGB color-swatch control."""
     return _color_property(
         value,
+        priority=priority,
+        group=group,
+        label=label,
+        description=description,
+    )
+
+
+def custom_property(
+    value: object,
+    *,
+    widget_id: str,
+    label: str,
+    description: str = "",
+    group: str = _DEFAULT_GROUP,
+    priority: int = _DEFAULT_PRIORITY,
+) -> PluginProperty:
+    """Create a custom inspector control that opens a registered dialog.
+
+    Parameters:
+        value: Persisted property payload (any JSON-serializable object).
+        widget_id: ``DialogWidget.widget_id`` on this plugin.
+        label: Row caption in the properties panel.
+        description: Tooltip text.
+        group: Inspector section name.
+        priority: Sort order within the group (lower first).
+
+    Returns:
+        A property the editor renders as an Edit button plus value summary.
+    """
+    return _custom_property(
+        value,
+        widget_id=widget_id,
         priority=priority,
         group=group,
         label=label,

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from aphelion_sdk.types import ColorRgb
+
+if TYPE_CHECKING:
+    from aphelion_sdk.widgets.base import PluginWidget
 
 _DEFAULT_PLUGIN_COLOR: ColorRgb = (120, 120, 120)
 
@@ -13,9 +16,9 @@ _DEFAULT_PLUGIN_COLOR: ColorRgb = (120, 120, 120)
 class Plugin(ABC):
     """Base for every Aphelion plugin, regardless of media type.
 
-    Authors do not subclass this directly. Use ``VideoEffectPlugin`` (or a
-    future audio base). ``plugin_*`` attributes are the public identity;
-    ``node_*`` copies exist so the editor can register video plugins as nodes.
+    Authors do not subclass this directly. Use ``VideoEffectPlugin``
+    (audio bases later). Attach UI with ``widgets = (MyDialog, MyPanel)``;
+    those classes subclass ``PluginWidget``, not ``Plugin``.
 
     Attributes:
         plugin_kind: Discriminator (``"video"``, later ``"audio"``).
@@ -24,6 +27,7 @@ class Plugin(ABC):
         plugin_description: One-line tooltip / search text.
         plugin_color: RGB header color, each channel ``0-255``.
         plugin_author: Optional credit string.
+        widgets: ``PluginWidget`` classes owned by this plugin.
     """
 
     plugin_kind: ClassVar[str] = "plugin"
@@ -32,6 +36,7 @@ class Plugin(ABC):
     plugin_description: ClassVar[str] = ""
     plugin_color: ClassVar[ColorRgb] = _DEFAULT_PLUGIN_COLOR
     plugin_author: ClassVar[str] = "Unknown"
+    widgets: ClassVar[tuple[type[PluginWidget], ...]] = ()
     node_type: ClassVar[str] = "Untitled Plugin"
     node_category: ClassVar[str] = "Plugins"
     node_description: ClassVar[str] = ""
