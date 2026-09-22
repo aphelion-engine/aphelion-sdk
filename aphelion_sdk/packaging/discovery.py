@@ -9,7 +9,7 @@ from pathlib import Path
 from aphelion_sdk.packaging.errors import PluginPackageError
 from aphelion_sdk.packaging.names import module_identifier
 
-_PLUGIN_BASE_TERMINALS: frozenset[str] = frozenset({"Plugin", "VideoEffectPlugin"})
+_PLUGIN_BASE_TERMINALS: frozenset[str] = frozenset({"Plugin", "VideoEffectPlugin", "NodePlugin", "AudioNodePlugin", "AudioEffectPlugin", "EditorExtension"})
 _DEFAULT_AUTHOR: str = "Unknown"
 
 

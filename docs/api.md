@@ -1,8 +1,10 @@
 # API reference
 
+Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](editor.md). New plugins use `aphelion_sdk.editor`.
+
 Import from `aphelion_sdk` only. Symbols are loaded lazily on first access.
 
-Version: `aphelion_sdk.__version__` (distribution name `aphelion-sdk`).
+Version: `aphelion_sdk.__version__` (distribution name `aphelion-plugin-sdk`).
 
 ## Plugins
 
@@ -13,7 +15,7 @@ Version: `aphelion_sdk.__version__` (distribution name `aphelion-sdk`).
 | `register_plugin` | Class decorator for in-process discovery. |
 | `get_registered_plugins` | Classes registered via `register_plugin`. |
 | `clear_registered_plugins` | Drop in-process registrations (editor reload). |
-| `discover_installed_plugins` | Load `aphelion.plugins` entry points. |
+| `discover_installed_plugins` | Load `aphelion.editor.plugins` entry points. |
 
 `VideoEffectPlugin` methods you implement: `setup_effect_properties`, `process_frame`. Optional: `build_property_panel`, `build_property_qt_widget`.
 

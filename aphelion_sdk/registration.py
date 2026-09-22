@@ -67,18 +67,19 @@ def discover_installed_plugins() -> tuple[type[Plugin], ...]:
         ``Plugin`` subclasses are skipped.
     """
     discovered: list[type[Plugin]] = []
-    for entry_point in metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP):
+    for entry_point in (*metadata.entry_points(group=_PLUGIN_ENTRY_POINT_GROUP),
+                        *metadata.entry_points(group="aphelion.editor.plugins")):
         plugin_class = _load_entry_point(entry_point)
         if plugin_class is not None:
             discovered.append(plugin_class)
-    return tuple(discovered)
+    return tuple(dict.fromkeys(discovered))
 
 
 def _load_entry_point(entry_point: metadata.EntryPoint) -> type[Plugin] | None:
     """Load one entry point and return it when it is a ``Plugin`` subclass."""
     try:
         loaded = entry_point.load()
-    except (ImportError, AttributeError):
+    except Exception:
         return None
     if isinstance(loaded, type) and issubclass(loaded, Plugin):
         return loaded

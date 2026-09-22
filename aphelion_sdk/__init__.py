@@ -122,6 +122,17 @@ _EXPORT_MAP: Final[dict[str, tuple[str, str]]] = {
 }
 
 
+_EDITOR_EXPORTS = {
+    "NodePlugin": "nodes", "NodeSocketType": "nodes", "NodeValue": "nodes",
+    "AudioNodePlugin": "audio", "AudioEffectPlugin": "audio",
+    "AudioData": "audio", "FrameWithAudio": "audio", "EditorExtension": "extensions",
+}
+for _name, _module in _EDITOR_EXPORTS.items():
+    _EXPORT_MAP[_name] = (f"aphelion_sdk.editor.{_module}", _name)
+_EXPORT_MAP["InspectorWidget"] = ("aphelion_sdk.widgets.inspector", "InspectorWidget")
+__all__ += [*_EDITOR_EXPORTS, "InspectorWidget"]
+
+
 def __getattr__(name: str) -> object:
     """Resolve a public SDK symbol on first access.
 

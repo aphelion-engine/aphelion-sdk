@@ -1,4 +1,4 @@
-"""Media-agnostic plugin metadata shared by video and (future) audio plugins."""
+"""Plugin identity and compatibility metadata."""
 
 from __future__ import annotations
 
@@ -16,12 +16,12 @@ _DEFAULT_PLUGIN_COLOR: ColorRgb = (120, 120, 120)
 class Plugin(ABC):
     """Base for every Aphelion plugin, regardless of media type.
 
-    Authors do not subclass this directly. Use ``VideoEffectPlugin``
-    (audio bases later). Attach UI with ``widgets = (MyDialog, MyPanel)``;
+    Use the editor-specific NodePlugin, VideoEffectPlugin, AudioEffectPlugin
+    or EditorExtension bases. Attach UI with ``widgets = (MyDialog, MyPanel)``;
     those classes subclass ``PluginWidget``, not ``Plugin``.
 
     Attributes:
-        plugin_kind: Discriminator (``"video"``, later ``"audio"``).
+        plugin_kind: Discriminator: node, video, audio or extension.
         plugin_name: Display name in menus and the node graph.
         plugin_category: Menu group. Defaults to ``"Plugins"``.
         plugin_description: One-line tooltip / search text.
@@ -30,6 +30,8 @@ class Plugin(ABC):
         widgets: ``PluginWidget`` classes owned by this plugin.
     """
 
+    plugin_product: ClassVar[str] = "editor"
+    plugin_api_version: ClassVar[int] = 1
     plugin_kind: ClassVar[str] = "plugin"
     plugin_name: ClassVar[str] = "Untitled Plugin"
     plugin_category: ClassVar[str] = "Plugins"

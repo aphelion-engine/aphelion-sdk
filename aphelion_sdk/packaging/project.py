@@ -15,7 +15,7 @@ from aphelion_sdk.packaging.names import (
 )
 from aphelion_sdk.version import DISTRIBUTION_NAME, __version__
 
-_ENTRY_POINT_GROUP: str = "aphelion.plugins"
+_ENTRY_POINT_GROUP: str = "aphelion.editor.plugins"
 _DEFAULT_DESCRIPTION: str = "Aphelion editor plugin."
 _UNKNOWN_AUTHOR: str = "Unknown"
 
@@ -170,7 +170,7 @@ def _entry_points(
     plugins: tuple[DiscoveredPlugin, ...],
     import_package: str,
 ) -> tuple[tuple[str, str], ...]:
-    """Return ``(name, target)`` pairs for the ``aphelion.plugins`` group."""
+    """Return ``(name, target)`` pairs for the ``aphelion.editor.plugins`` group."""
     used: set[str] = set()
     pairs: list[tuple[str, str]] = []
     for plugin in plugins:
@@ -228,7 +228,7 @@ def _project_table_lines(spec: PackageSpec) -> list[str]:
 
 
 def _entry_point_lines(spec: PackageSpec) -> list[str]:
-    """Return the ``aphelion.plugins`` entry-point table."""
+    """Return the ``aphelion.editor.plugins`` entry-point table."""
     lines: list[str] = [f'[project.entry-points."{_ENTRY_POINT_GROUP}"]']
     for name, target in spec.entry_points:
         lines.append(f"{name} = {_toml_string(target)}")

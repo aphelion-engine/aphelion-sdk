@@ -47,8 +47,28 @@ class WidgetView(Protocol):
         control_id: str,
         value: str,
         placeholder: str = "",
+        on_change: Callable[[str], None] | None = None,
     ) -> None:
         """Append a single-line text field."""
+
+    def add_number(self, control_id: str, label: str, value: float,
+                   minimum: float = -1e9, maximum: float = 1e9,
+                   on_change: Callable[[float], None] | None = None) -> None:
+        """Append a labeled numeric control."""
+
+    def add_toggle(self, control_id: str, label: str, value: bool,
+                   on_change: Callable[[bool], None] | None = None) -> None:
+        """Append a checkbox."""
+
+    def add_choice(self, control_id: str, label: str, choices: list[str], value: str,
+                   on_change: Callable[[str], None] | None = None) -> None:
+        """Append a dropdown."""
+
+    def get_value(self, control_id: str) -> object:
+        """Read a control. Unknown ids raise KeyError."""
+
+    def set_value(self, control_id: str, value: object) -> None:
+        """Update a control without emitting its change callback."""
 
     def add_separator(self) -> None:
         """Append a horizontal divider."""
@@ -103,3 +123,29 @@ class WidgetHost(Protocol):
 
     def set_property_value(self, key: str, value: object) -> None:
         """Write a property on the bound node through the editor undo stack."""
+
+    def available_nodes(self) -> tuple[tuple[str, str], ...]:
+        """Return (category, name) pairs for all registered node types."""
+
+    def list_nodes(self) -> tuple[str, ...]:
+        """Return node instance ids in the current project."""
+
+    def create_node(self, category: str, name: str, *, x: float = 0, y: float = 0) -> str:
+        """Create any registered node through undo history; return its id."""
+
+    def remove_node(self, node_id: str) -> bool:
+        """Remove a node and its connections through undo history."""
+
+    def connect_nodes(self, output_node_id: str, output_slot: str,
+                      input_node_id: str, input_slot: str) -> bool:
+        """Connect compatible sockets through undo history."""
+
+    def get_node_property(self, node_id: str, key: str) -> object:
+        """Return a detached property value; missing nodes/keys raise KeyError."""
+
+    def set_node_property(self, node_id: str, key: str, value: object) -> None:
+        """Set a node property through undo history; missing keys raise KeyError."""
+
+    def set_node_properties(self, node_id: str, values: dict[str, object],
+                            label: str = "Plugin properties") -> bool:
+        """Apply a batch of property changes as one atomic undo step."""

@@ -1,14 +1,20 @@
 # Aphelion Plugin SDK
 
+Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](docs/editor.md). New plugins use `aphelion_sdk.editor`.
+
 Public API for plugins that run **inside Aphelion Editor**. This package sits beside `aphelion-editor`, not inside it.
 
 Import **`aphelion_sdk` only**. Never import `core`, `effects`, `render`, or `ui`.
 
-Video effects are available now (`VideoEffectPlugin`). Audio bases will land under `aphelion_sdk.audio` later.
+Video, audio, arbitrary graph nodes and editor extensions are available under `aphelion_sdk.editor`.
 
-Version **0.1.0**. Python **3.11+**. Distribution name **`aphelion-sdk`**.
+Version **0.1.0**. Python **3.11+**. Install with **`pip install aphelion-plugin-sdk`**. Import **`aphelion_sdk`**.
 
 ## Install
+
+```bash
+pip install aphelion-plugin-sdk
+```
 
 From the `aphelion-engine` root, with a venv active:
 
@@ -17,7 +23,7 @@ pip install -e ./aphelion-editor
 pip install -e ./aphelion-sdk
 ```
 
-Installing the editor already depends on this package (`aphelion-sdk @ file:../aphelion-sdk`).
+Installing the editor already depends on this package (`aphelion-plugin-sdk @ file:../aphelion-sdk`).
 
 ```bash
 aphelion-sdk --version
@@ -86,7 +92,7 @@ aphelion-sdk build examples/grayscale_effect.py -o dist
 pip install dist/aphelion_plugin_grayscale-*.whl
 ```
 
-Entry point group: `aphelion.plugins`. Widgets are declared on the plugin (`widgets = (MyDialog, MyPanel)`); they are not registered on their own.
+Entry point group: `aphelion.editor.plugins`. Widgets are declared on the plugin (`widgets = (MyDialog, MyPanel)`); they are not registered on their own.
 
 ## License
 

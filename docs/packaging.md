@@ -19,7 +19,7 @@ install_plugins_into_editor(Path("examples/grayscale_effect.py"))
 
 ## `aphelion-sdk build`
 
-Wraps plugin sources, writes a src-layout project, and emits a wheel whose `aphelion.plugins` entry points are already set.
+Wraps plugin sources, writes a src-layout project, and emits a wheel whose `aphelion.editor.plugins` entry points are already set.
 
 ```bash
 aphelion-sdk build examples/grayscale_effect.py -o dist
@@ -39,7 +39,7 @@ Optional flags (generated packages only): `--name`, `--package-version` (default
 ## Your own project
 
 ```toml
-[project.entry-points."aphelion.plugins"]
+[project.entry-points."aphelion.editor.plugins"]
 grayscale = "my_plugin_package.grayscale:GrayscaleEffect"
 ```
 
@@ -66,4 +66,4 @@ pip install -e ".[dev]"
 python -m build
 ```
 
-The wheel name is `aphelion-sdk`. Installing the editor from `aphelion-editor/` already depends on `aphelion-sdk @ file:../aphelion-sdk`.
+The PyPI / wheel name is `aphelion-plugin-sdk`. Import remains `aphelion_sdk`. Installing the editor from `aphelion-editor/` already depends on `aphelion-plugin-sdk @ file:../aphelion-sdk`.

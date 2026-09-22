@@ -74,3 +74,6 @@ class PluginWidget(ABC):
             Default is an empty view, used when ``build_qt_widget`` is set.
         """
         return host.create_view()
+
+    def on_dispose(self, host: WidgetHost) -> None:
+        """Release timers/subscriptions when this UI surface is destroyed."""

@@ -1,5 +1,7 @@
 # Aphelion Plugin SDK documentation
 
+Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](editor.md). New plugins use `aphelion_sdk.editor`.
+
 Guides for writing, packaging, and installing plugins that run inside Aphelion Editor.
 
 | Guide | Contents |

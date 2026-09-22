@@ -1,9 +1,3 @@
-"""Audio plugin bases.
-
-Not implemented in this release. Video effects use
-``aphelion_sdk.VideoEffectPlugin``.
-"""
-
-from __future__ import annotations
-
-__all__: list[str] = []
+"""Compatibility exports; new plugins should use aphelion_sdk.editor.audio."""
+from aphelion_sdk.editor.audio import AudioData, FrameWithAudio, AudioNodePlugin, AudioEffectPlugin
+__all__ = ["AudioData", "FrameWithAudio", "AudioNodePlugin", "AudioEffectPlugin"]

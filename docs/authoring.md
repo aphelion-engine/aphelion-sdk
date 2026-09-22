@@ -2,7 +2,7 @@
 
 Plugins run **inside the editor process**. Import `aphelion_sdk` only. Never import `core`, `effects`, `render`, `ui`, or other editor packages.
 
-Video effects are supported now. Audio bases will live under `aphelion_sdk.audio` later (reserved, not exported).
+Video, audio and general-purpose nodes are supported. New plugins should import `aphelion_sdk.editor`; see [Editor extensions](editor.md).
 
 ## Minimal effect
 
@@ -81,7 +81,7 @@ A connected modulation socket or Property Drive can override numeric properties 
 
 1. Drop a `.py` file in the editor's `plugins/` or `userdata/plugins/`.
 2. Decorate the class with `@aphelion_sdk.register_plugin`.
-3. Or ship a wheel with an `aphelion.plugins` entry point.
+3. Or ship a wheel with an `aphelion.editor.plugins` entry point.
 
 The editor's **Preferences → Plugins** can disable types, skip discovery sources, and reload drop-in files. See [editor plugin docs](../../aphelion-editor/docs/plugins.md) and [packaging](packaging.md).
 

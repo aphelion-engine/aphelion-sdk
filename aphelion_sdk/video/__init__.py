@@ -1,4 +1,4 @@
-"""Video plugin bases. Audio bases will live under ``aphelion_sdk.audio``."""
+"""Compatibility video exports; prefer ``aphelion_sdk.editor.video``."""
 
 from __future__ import annotations
 
