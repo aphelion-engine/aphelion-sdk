@@ -6,7 +6,7 @@ template. Authors only import ``aphelion_sdk``.
 
 from __future__ import annotations
 
-import aphelion_sdk
+from aphelion_sdk import editor as aphelion_sdk
 
 
 @aphelion_sdk.register_plugin

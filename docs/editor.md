@@ -1,107 +1,82 @@
-# Aphelion Editor extensions
+# Product compatibility and troubleshooting
 
-New plugins import `aphelion_sdk.editor`. This is the product boundary: another
-Aphelion product will have its own namespace and runtime contracts. Shared
-packaging and installation tooling remain under `aphelion_sdk`. Existing root,
-`video`, `audio`, and `widgets` imports remain compatibility APIs.
+## Product namespaces
 
-Editor runtime bases use the installed editor's node engine. For local development,
-put `aphelion-editor/src` and `aphelion-sdk` on `PYTHONPATH`; the SDK does not ship a
-second renderer. Packaging and importing the lazy product namespace do not require
-an editor runtime. Native UI uses PyQt6 supplied by the editor.
+New plugins target Aphelion Editor through `aphelion_sdk.editor`. Editor is the
+only current product. Its node, audio, UI and extension contracts live under that
+namespace; another product can have its own namespace without mixing its APIs
+into editor plugins. Packaging and installation tooling remain shared.
 
-## Node APIs
+Convenience submodules include `aphelion_sdk.editor.nodes`, `.video`, `.audio`,
+`.properties`, `.widgets` and `.extensions`. Prefer the main product namespace when
+combining several features in one plugin.
 
-| Base | Implement | Behavior |
-| --- | --- | --- |
-| `NodePlugin` | `setup_input_outputs`, `evaluate` | Arbitrary generators, effects, masks, compositors, logic, mixed-media and multiple outputs |
-| `VideoEffectPlugin` | `process_frame` | Default frame sockets, enabled/mix controls, automatic audio preservation |
-| `AudioNodePlugin` | `setup_input_outputs`, `evaluate` | Arbitrary audio generation, routing, resampling and analysis |
-| `AudioEffectPlugin` | `process_audio` | Audio sockets, enabled/mix controls and block shape/rate validation |
+`plugin_product` defaults to `"editor"`; `plugin_api_version` defaults to `1`.
+The loader ignores other products and unsupported API versions. This API version
+is separate from the SDK distribution's version number. Publishing/installing a
+new SDK does not update the editor application: the new APIs require the editor
+implementation that supports them.
 
-Use `setup_effect_properties` to call `set_property(key, number_property(...))`
-(or slider, toggle, text, choice, color, custom). It runs once after socket setup.
-Properties use the normal editor persistence, animation and undo paths.
-Read evaluated values with `float_value`, `int_value`, `bool_value`, `string_value`,
-`color_value` or `enum_value`; use `expose_modulation_input` for numeric modulation.
+## Migrating existing plugins
 
-`NodeSocketType` exposes Frame, Mask, Number, Color, Audio, Any and legacy Node.
-Use `add_input` / `add_output` for any combination. `evaluate(frame_num)` returns
-one payload, or a dictionary keyed by output socket names. Frames are float32 RGB
-arrays; masks may be arrays; numbers are scalars. `AudioData(samples, sample_rate)`
-uses float32 mono `(samples,)` or multichannel `(samples, channels)` buffers.
-`FrameWithAudio` carries both. Do not mutate upstream input buffers.
+| Existing usage | Recommended usage |
+| --- | --- |
+| `import aphelion_sdk` | `from aphelion_sdk import editor as sdk` and use `sdk.*` |
+| `aphelion_sdk.VideoEffectPlugin` | `aphelion_sdk.editor.VideoEffectPlugin` |
+| Audio/general logic in a custom video plugin | `AudioEffectPlugin`, `AudioNodePlugin` or `NodePlugin` |
+| Node-specific properties UI | Attached `InspectorWidget` or existing node UI hook |
+| Dummy node used only to own a dock | `EditorExtension` |
+| `aphelion.plugins` package entry points | `aphelion.editor.plugins` for new packages |
 
-Audio effects process timeline-aligned blocks, not a separate realtime audio
-callback. `AudioEffectPlugin.process_audio` must preserve sample rate and shape;
-use `AudioNodePlugin` for other contracts. Missing audio returns None. Mix is 0?1
-for audio and 0?100 for the legacy video base. Custom video plugins can override
-both `setup_input_outputs` and `evaluate` instead of using the unary effect path.
+Root imports and old video/widget modules remain supported. Legacy entry points
+are still discovered, and duplicate class objects are deduplicated. The video base
+supports both `process_frame` effects and custom `setup_input_outputs` + `evaluate`
+implementations. Properties now initialize after custom socket setup.
 
-## Properties pages and windows
+Use the actual hook signatures: `build_property_panel(host)` and
+`build_property_qt_widget(parent, host)`. Zero-argument implementations do not match
+the editor's calls. Attached widgets receive those arguments through `build_view`
+and `build_qt_widget` instead.
 
-Attach classes using `widgets = (MyInspector, MyDialog, MyPanel)`:
+Do not rename saved plugin categories/names, sockets or property keys merely to
+adopt the new imports. Those identities are used by existing projects.
 
-- `InspectorWidget`: inline section in the selected node's properties page.
-- `DialogWidget`: custom window opened by a `custom_property(widget_id=...)` row
-  or `host.open_dialog(id)`. `widget_modal = False` opens a modeless window.
-- `PanelWidget`: editor dock, available without selecting a node.
+## Discovery and reload
 
-Implement `build_view(host)` using `host.create_view()`. Controls include labels,
-buttons, text, numbers, toggles, choices and separators. Numeric, toggle, choice
-and text controls accept `on_change`; `set_value` refreshes values without firing
-change callbacks, and `get_value` reads them. Use `get_text` for text-based controls.
-For arbitrary PyQt6 layouts implement `build_qt_widget(parent, host)` or use
-`view.embed_native(widget)`. The host owns and destroys the widgets. Release timers
-and external subscriptions in `on_dispose(host)`.
+Decorated source plugins load from bundled/user folders. A user file with the
+same filename overrides the bundled module. Files beginning with `_` are skipped.
+Installed packages can expose classes via entry points. Preferences > Plugins
+controls discovery sources and per-plugin enablement.
 
-A node may also implement `build_property_panel(host)` or
-`build_property_qt_widget(parent, host)`. Attached inspector sections and the node
-hook can coexist. Dialog `on_accept(view, host)` commits staged edits;
-`on_reject` handles cancellation. Edits made directly through host setters are
-immediate, including edits made before a dialog is cancelled.
+Plugins cannot replace an already registered built-in node type. Use a distinct
+category/name pair. Failed drop-in imports are logged and their partially
+registered classes are excluded from discovery.
 
-`host.context()` identifies the plugin, node and optional property. Bound
-`get_property_value` / `set_property_value` access the selected node; setters use
-undo history. Read values are detached copies, so editing a list or dictionary
-cannot silently mutate the project. A missing bound node is a no-op for these
-convenience methods. Dialog ids resolve strictly within their owning plugin.
+Reload updates discovery, menus and docks. Existing graph nodes keep their old
+Python class; recreate them or reopen the project to use revised implementations.
+The SDK does not automatically migrate renamed types or arbitrary instance state.
 
-## Extending the editor
+## Troubleshooting
 
-An `EditorExtension` has no graph node. Attach docks/dialogs and define
-`commands = (EditorCommand("id", "Title", callback, shortcut=""),)`.
-Commands appear in Plugins ? extension name; callbacks receive a fresh host and
-run on the UI thread. Exceptions are logged without escaping into Qt.
+| Symptom | Check |
+| --- | --- |
+| `ModuleNotFoundError: core` when importing a node base | The SDK needs the editor runtime. Use the editor environment and [local setup](authoring.md#local-development). |
+| Plugin absent from Add Node | Check `@register_plugin`, folder, filename, preferences and import errors in the editor log. EditorExtension has no graph node by design. |
+| Installed plugin not discovered | Install into the editor's Python environment; enable entry-point loading and check the entry-point group. |
+| Old processing after Reload | Recreate the graph node or reopen the project. |
+| Inline custom UI absent | Attach an InspectorWidget in `widgets = (...)`, select its node and return a view/QWidget from the correct hook. |
+| Dialog cannot find a property | Check host.context().node_id. Docks and menu-opened dialogs are not bound to selection. |
+| Custom property button opens nothing | Its widget_id must match a DialogWidget attached to the same plugin. |
+| Cancel does not revert an edit | Host setters commit immediately. Stage values in the dialog and write them in on_accept for commit-on-OK behavior. |
+| Audio processor fails on output | Return AudioData with float32 samples, unchanged shape and sample rate; use AudioNodePlugin for resampling. |
+| Time-dependent output stays unchanged | Set is_temporal = True when output varies by frame independently of inputs. |
+| A graph edit creates several undo steps | Each host operation is separate; only set_node_properties groups its property batch. |
 
-Every widget/command host provides:
+## Tutorials and examples
 
-- `available_nodes()`: `(category, name)` for every currently registered built-in
-  or enabled plugin node; use these exact pairs with `create_node`.
-- `create_node(category, name, x=0, y=0)`: create any registered effect/audio/node
-  type, returning its stable instance id.
-- `list_nodes()`, `remove_node(id)`, `connect_nodes(source, output, target, input)`.
-- `get_node_property(id, key)` and `set_node_property(id, key, value)`.
-- `set_node_properties(id, values, label=...)`: atomic batch with one undo step.
-
-Graph edits use the editor's history, cache invalidation and document events.
-Explicit node/property lookups raise KeyError for unknown identifiers. Connection
-creation returns False when the editor rejects an incompatible link or cycle.
-Call host methods on the UI thread. Node evaluation is separate from UI work.
-
-## Discovery and compatibility
-
-Decorate concrete plugin classes with `@register_plugin`. Drop source files into
-`userdata/plugins`, or build a wheel with `aphelion-sdk build example.py -o dist`.
-New wheels use the `aphelion.editor.plugins` entry-point group. The editor also
-reads legacy `aphelion.plugins`, deduplicating classes appearing in both.
-
-Plugins declare `plugin_product = "editor"` and `plugin_api_version = 1` by default.
-The editor skips other products and unsupported API versions. Enabled extensions,
-commands and widgets follow Preferences ? Plugins and reload. Plugins cannot
-replace built-in registry entries. Existing node instances retain their old class
-on reload; reopen a project to reconstruct them with new code.
-
-See [the complete example](../examples/editor_extension.py) for audio processing,
-a multi-output effect, an inline inspector, a modeless property window, a dock,
-and a menu command. No editor-internal imports are needed in plugin source.
+- [First plugin](../README.md#install-and-run-your-first-plugin)
+- [General nodes and properties](authoring.md)
+- [Audio](audio.md)
+- [Custom UI](widgets.md)
+- [Docks, commands and graph edits](extensions.md)
+- [Combined runnable example](../examples/editor_extension.py)

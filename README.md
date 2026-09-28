@@ -1,98 +1,86 @@
-# Aphelion Plugin SDK
+# Aphelion SDK
 
-Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](docs/editor.md). New plugins use `aphelion_sdk.editor`.
+Build plugins for Aphelion Editor: video effects, audio processors, generators,
+compositors, masks, logic nodes, custom properties UI, windows, docks and menu commands.
 
-Public API for plugins that run **inside Aphelion Editor**. This package sits beside `aphelion-editor`, not inside it.
+New editor plugins import `aphelion_sdk.editor`. Product APIs are kept in their own
+namespaces; packaging and installation tools are shared. The existing root imports
+remain supported for older plugins. Plugin code should not import editor internals
+such as `core`, `effects`, `render` or `ui`.
 
-Import **`aphelion_sdk` only**. Never import `core`, `effects`, `render`, or `ui`.
+## Install and run your first plugin
 
-Video, audio, arbitrary graph nodes and editor extensions are available under `aphelion_sdk.editor`.
+Use Python 3.11 or newer and an updated Aphelion Editor. Install the SDK in the
+Python environment used by the editor:
 
-Version **0.1.0**. Python **3.11+**. Install with **`pip install aphelion-plugin-sdk`**. Import **`aphelion_sdk`**.
-
-## Install
-
-```bash
-pip install aphelion-plugin-sdk
+```shell
+python -m pip install --upgrade aphelion-plugin-sdk
 ```
 
-From the `aphelion-engine` root, with a venv active:
+The SDK provides an extension API, not a standalone editor runtime. Node classes
+use the editor's runtime. For development against the sibling repositories, see
+[local setup](docs/authoring.md#local-development).
 
-```bash
-pip install -e ./aphelion-editor
-pip install -e ./aphelion-sdk
-```
-
-Installing the editor already depends on this package (`aphelion-plugin-sdk @ file:../aphelion-sdk`).
-
-```bash
-aphelion-sdk --version
-python -m aphelion_sdk --help
-```
-
-## Quick start
+Save this complete plugin as `brightness.py`:
 
 ```python
-import aphelion_sdk
+from aphelion_sdk.editor import VideoEffectPlugin, number_property, register_plugin
 
 
-@aphelion_sdk.register_plugin
-class GrayscaleEffect(aphelion_sdk.VideoEffectPlugin):
-    plugin_name = "Grayscale"
-    plugin_category = "Plugins"
-    plugin_description = "Blend a frame toward grayscale."
-    plugin_color = (140, 140, 140)
+@register_plugin
+class Brightness(VideoEffectPlugin):
+    plugin_name = "Example Brightness"
+    plugin_category = "My Plugins"
+    plugin_description = "Multiply the brightness of a frame."
 
-    def setup_effect_properties(self) -> None:
-        self.set_property(
-            "amount",
-            aphelion_sdk.slider_property(
-                100, 0, 100,
-                label="Amount",
-                suffix="%",
-            ),
-        )
+    def setup_effect_properties(self):
+        self.set_property("gain", number_property(1.0, 0.0, 4.0, label="Gain"))
 
-    def process_frame(
-        self,
-        frame: aphelion_sdk.Frame,
-        _frame_num: int,
-    ) -> aphelion_sdk.Frame:
-        amount = self.float_value("amount", 100.0) / 100.0
-        luma = (
-            frame[..., 0] * 0.2126
-            + frame[..., 1] * 0.7152
-            + frame[..., 2] * 0.0722
-        )
-        gray = luma[..., None].repeat(3, axis=2)
-        return frame * (1.0 - amount) + gray * amount
+    def process_frame(self, frame, frame_num):
+        return frame * self.float_value("gain", 1.0)
 ```
 
-Drop the file in the editor's `plugins/` or `userdata/plugins/`, or pack a wheel (below). Time-independent effects should name the unused argument `_frame_num`.
+1. Open **Preferences > Plugins > Open user folder** in the editor and copy the file there.
+2. Enable user plugins and select **Reload plugins**.
+3. Add **My Plugins > Example Brightness** to the graph.
+4. Connect a source frame to its `frame` input and its `frame` output to a viewer.
+5. Select the node and change **Gain** in Properties. **Enabled** and **Mix** are supplied automatically.
 
-Examples:
+## Choose your extension
 
-- [`examples/grayscale_effect.py`](examples/grayscale_effect.py)
-- [`examples/effect_with_widget.py`](examples/effect_with_widget.py) — dialog + panel via `widgets = (...)`
+| You want to build | Start with |
+| --- | --- |
+| A single-input video effect | `VideoEffectPlugin.process_frame` |
+| An audio processor | `AudioEffectPlugin.process_audio` |
+| A generator, compositor, mask, logic or multi-output node | `NodePlugin` |
+| Audio generation, routing or a different audio socket layout | `AudioNodePlugin` |
+| A custom section in a node's properties page | `InspectorWidget` |
+| A custom property editor or popup window | `DialogWidget` |
+| A dock or menu command without a graph node | `EditorExtension` with `PanelWidget` / `EditorCommand` |
 
-## Documentation
+## Learn the SDK
 
-| Guide | Contents |
-|---|---|
-| [Authoring](docs/authoring.md) | Effect class, properties, discovery rules |
-| [Widgets](docs/widgets.md) | Panels, dialogs, primitives, PyQt6 |
-| [API reference](docs/api.md) | Public symbols |
-| [Packaging](docs/packaging.md) | `aphelion-sdk build`, entry points, drop-in install |
-| [Editor plugins](../aphelion-editor/docs/plugins.md) | How the host loads and reloads plugins |
+| Guide | What you will build or learn |
+| --- | --- |
+| [Authoring nodes](docs/authoring.md) | Video effects, arbitrary sockets, multiple outputs, properties and local setup |
+| [Audio](docs/audio.md) | A gain processor, block formats, mixing and custom audio nodes |
+| [Custom UI](docs/widgets.md) | Inline inspectors, property dialogs, modeless windows and native Qt bodies |
+| [Editor extensions](docs/extensions.md) | Docks, menu commands and undoable graph automation |
+| [API reference](docs/api.md) | Public classes, method signatures and host behavior |
+| [Install and package plugins](docs/packaging.md) | Drop-in files, wheels, entry points and reload |
+| [Compatibility and troubleshooting](docs/editor.md) | Product boundaries, migration and common problems |
 
-## Package a plugin
+## Examples
 
-```bash
-aphelion-sdk build examples/grayscale_effect.py -o dist
-pip install dist/aphelion_plugin_grayscale-*.whl
-```
+- [Grayscale effect](examples/grayscale_effect.py): one slider and a video processor.
+- [Effect with native Qt UI](examples/effect_with_widget.py): notes dialog and dock.
+- [Editor extension](examples/editor_extension.py): audio gain, multiple outputs,
+  inline inspector, modeless dialog, dock and command in one file.
 
-Entry point group: `aphelion.editor.plugins`. Widgets are declared on the plugin (`widgets = (MyDialog, MyPanel)`); they are not registered on their own.
+Copy an example into the user plugins folder, then reload. Changes to an existing
+node's Python class take effect when you reopen the project or recreate the node.
+
+The release version is defined in [version.py](aphelion_sdk/version.py).
 
 ## License
 

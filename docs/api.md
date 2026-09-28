@@ -1,70 +1,126 @@
-# API reference
+# Editor SDK API reference
 
-Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](editor.md). New plugins use `aphelion_sdk.editor`.
+Import these symbols from `aphelion_sdk.editor`. See [authoring](authoring.md),
+[audio](audio.md), [widgets](widgets.md) and [extensions](extensions.md) for complete
+examples. The product namespace is lazy; resolving runtime node classes requires
+the editor runtime. Type declarations are included in the SDK.
 
-Import from `aphelion_sdk` only. Symbols are loaded lazily on first access.
+## Plugin bases
 
-Version: `aphelion_sdk.__version__` (distribution name `aphelion-plugin-sdk`).
+| Class | Contract |
+| --- | --- |
+| `NodePlugin` | Define `setup_input_outputs()` and `evaluate(frame_num)` |
+| `VideoEffectPlugin` | Default frame effect; override `process_frame(frame, frame_num)` |
+| `AudioNodePlugin` | General node base with audio identity |
+| `AudioEffectPlugin` | Override `process_audio(audio, frame_num)`; preserve rate and shape |
+| `EditorExtension` | Attach `widgets` and `commands`; no graph node |
+| `Plugin` | Shared identity metadata; prefer a concrete product base above |
+| `EditorCommand(command_id, title, callback, shortcut="")` | Extension menu command; callback receives a WidgetHost |
 
-## Plugins
+Node bases support `setup_effect_properties()` and optional
+`build_property_panel(host)` / `build_property_qt_widget(parent, host)`.
+General node bases supply no default sockets. Video effects supply frame sockets
+and enabled/mix (0 to 100); audio effects supply audio sockets and enabled/mix (0 to 1).
 
-| Symbol | Purpose |
-|---|---|
-| `Plugin` | Media-agnostic metadata base. Do not subclass directly. |
-| `VideoEffectPlugin` | Unary video frame effect (`plugin_kind = "video"`). |
-| `register_plugin` | Class decorator for in-process discovery. |
-| `get_registered_plugins` | Classes registered via `register_plugin`. |
-| `clear_registered_plugins` | Drop in-process registrations (editor reload). |
-| `discover_installed_plugins` | Load `aphelion.editor.plugins` entry points. |
+## Data and sockets
 
-`VideoEffectPlugin` methods you implement: `setup_effect_properties`, `process_frame`. Optional: `build_property_panel`, `build_property_qt_widget`.
+| Symbol | Contract |
+| --- | --- |
+| `Frame` | NumPy ndarray; RGB `(H, W, 3)`, float32, nominal 0 to 1 |
+| `ColorRgb` | Three integer channels from 0 to 255 |
+| `AudioData(samples, sample_rate)` | float32 mono `(N,)` or multichannel `(N, C)` buffer |
+| `FrameWithAudio(frame, audio)` | Frame and optional AudioData |
+| `NodeSocketType` | Frame, Mask, Number, Color, Audio, Any, legacy Node |
+| `NodeValue` | Payload or output-name-to-payload dictionary; supports missing payloads |
+| `NodePropertyInputType` | Host property control discriminator |
 
-## Types
+Node methods include `add_input(name, socket_type)`, `add_output(name, socket_type)`,
+`get_input_value(slot)`, `input_frame(slot="frame")`, `input_audio(slot="audio")`,
+`input_frame_with_audio(slot="frame")`, `input_number(slot, default=0.0)` and
+`blank_frame()`. Multiple outputs must be keyed by their declared socket names.
 
-| Symbol | Purpose |
-|---|---|
-| `Frame` | `numpy.ndarray`, shape `(H, W, 3)`, `float32`, `[0, 1]`. No alpha. |
-| `ColorRgb` | `tuple[int, int, int]`, each channel `0–255`. |
+## Property builders
 
-## Properties
+Pass a builder's result to `self.set_property(key, property)` during setup.
+All builders accept keyword-only `label`, `description=""`, `group="General"` and
+`priority=100`. Lower priorities sort first.
 
-Pass builder results to `self.set_property(key, ...)`. Common keyword args: `label`, `description`, `group` (default `General`), `priority` (lower first, default `100`).
+| Builder | Additional arguments / behavior |
+| --- | --- |
+| `slider_property(value, minimum, maximum, *, label, ...)` | Integer slider; `suffix=""` |
+| `number_property(value, minimum, maximum, *, label, ...)` | Numeric field; `suffix=""` |
+| `toggle_property(value, *, label, ...)` | Boolean checkbox |
+| `text_property(value, *, label, ...)` | Text field |
+| `color_property(value, *, label, ...)` | RGB swatch |
+| `choice_property(value, *, label, ...)` | An Enum member determines choices |
+| `custom_property(value, *, widget_id, label, ...)` | Persisted JSON-serializable value and a dialog button |
+| `PluginProperty` | Property handle type; prefer builders |
 
-| Builder | Control |
-|---|---|
-| `slider_property(value, min, max, *, label, suffix="")` | Integer slider |
-| `number_property(value, min, max, *, label, suffix="")` | Float spin box |
-| `toggle_property(value, *, label)` | Checkbox |
-| `text_property(value, *, label)` | Line edit |
-| `color_property(value, *, label)` | RGB swatch |
-| `choice_property(enum_value, *, label)` | Enum dropdown |
-| `custom_property(value, *, widget_id, label)` | Opens a `DialogWidget` on this plugin |
-| `PluginProperty` | Opaque handle type (do not construct) |
+Use `float_value`, `int_value`, `bool_value`, `string_value`, `color_value` and
+`enum_value` to read evaluated values. `expose_modulation_input(key)` adds an
+`in_<key>` Number input for a numeric parameter. See [property examples](authoring.md#declare-and-read-properties).
 
 ## Widgets
 
+| Class | Contract |
+| --- | --- |
+| `InspectorWidget` | Inline properties-page section |
+| `PanelWidget` | Dockable editor panel |
+| `DialogWidget` | Modal or modeless window; `on_accept(view, host)`, `on_reject(view, host)` |
+| `PluginWidget` | Base for attached UI surfaces |
+| `WidgetView` | Host primitive controls; [full method table](widgets.md#primitive-controls) |
+| `WidgetHost` | Bound properties, window creation and graph operations |
+| `WidgetContext` | `plugin_key`, `node_id`, `property_key`, `project_name` |
+| `coerce_qt_parent(parent)` | Convert a host parent to a QWidget-compatible parent |
+| `is_qt_widget(value)` | Check whether a value is a PyQt6 QWidget |
+
+Attached widgets implement `build_view(host)` or
+`build_qt_widget(parent, host)`. A valid native QWidget takes priority over the
+primitive view. `on_dispose(host)` handles resource cleanup on destruction.
+
+## WidgetHost
+
+| Method | Contract |
+| --- | --- |
+| `create_view()` | Empty host-owned WidgetView |
+| `context()` | Binding metadata |
+| `qt_parent()` | Host Qt parent object |
+| `open_dialog(widget_id)` | True when shown; resolves within the owning plugin |
+| `get_property_value(key)` | Detached bound-node property value, or None |
+| `set_property_value(key, value)` | Undoable write; missing bound nodes/keys are ignored |
+| `available_nodes()` | Registered `(category, name)` pairs |
+| `list_nodes()` | Current project node ids |
+| `create_node(category, name, *, x=0, y=0)` | Create registered type and return its id |
+| `remove_node(node_id)` | Undoable removal, returning bool |
+| `connect_nodes(output_node_id, output_slot, input_node_id, input_slot)` | Undoable connection, returning bool |
+| `get_node_property(node_id, key)` | Detached value; missing identifiers raise KeyError |
+| `set_node_property(node_id, key, value)` | Undoable write; missing identifiers raise KeyError |
+| `set_node_properties(node_id, values, label="Plugin properties")` | Atomic property batch in one undo step; bool |
+
+Host methods must run on the UI thread. Context does not imply a selected node for
+docks, commands or menu-opened dialogs. See [graph automation](extensions.md#graph-operations).
+
+## Discovery and compatibility
+
 | Symbol | Purpose |
-|---|---|
-| `PluginWidget` | Base UI surface. Not registered alone. |
-| `PanelWidget` | Dockable panel. |
-| `DialogWidget` | Popup (`on_accept` / `on_reject`). |
-| `WidgetHost` | Factory, properties, `open_dialog`, `qt_parent`. |
-| `WidgetView` | Primitive controls + `embed_native`. |
-| `WidgetContext` | Binding to plugin/node/property. |
-| `coerce_qt_parent` | Parent a `QWidget` to a host object. |
-| `is_qt_widget` | Type check for embedded widgets. |
+| --- | --- |
+| `register_plugin` | Decorator for node/extension classes, not widget classes |
+| `get_registered_plugins()` | Snapshot of decorated classes |
+| `discover_installed_plugins()` | Both `aphelion.editor.plugins` and legacy `aphelion.plugins` entry points |
+| `clear_registered_plugins()` | Host reload helper; plugin code should not clear other registrations |
+| `PRODUCT_ID` | `"editor"` |
+| `API_VERSION` | `1` |
+| `__version__` | SDK distribution version, distinct from API_VERSION |
 
-## Host helpers (optional)
+Product metadata defaults to `plugin_product = "editor"` and
+`plugin_api_version = 1`. The editor filters incompatible products/API versions.
+See [migration](editor.md#migrating-existing-plugins).
 
-`aphelion_sdk.host` is for tooling, not effect code:
+## Installation and packaging tools
 
-| Symbol | Purpose |
-|---|---|
-| `locate_editor` / `discover_editors` | Find an installed Aphelion Editor |
-| `install_plugins_into_editor` | Copy `.py` files into `userdata/plugins` |
-| `EditorInstall` / `EditorHostError` | Result and error types |
-
-## CLI
+`aphelion_sdk.host` provides `locate_editor`, `discover_editors`,
+`install_plugins_into_editor`, `EditorInstall` and `EditorHostError` for tooling.
+These locate the editor or copy source plugins into its user folder.
 
 ```text
 aphelion-sdk --version
@@ -72,4 +128,4 @@ aphelion-sdk build [source] [-o DIR] [-n NAME] [--package-version VER]
 python -m aphelion_sdk build ...
 ```
 
-See [packaging](packaging.md).
+See [packaging plugins](packaging.md) for building and installing your plugins.

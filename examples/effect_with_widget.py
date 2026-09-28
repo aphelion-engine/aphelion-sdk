@@ -10,7 +10,7 @@ from collections.abc import Callable
 
 from PyQt6.QtWidgets import QLabel, QTextEdit, QVBoxLayout, QWidget
 
-import aphelion_sdk
+from aphelion_sdk import editor as aphelion_sdk
 
 
 class NotesDialog(aphelion_sdk.DialogWidget):

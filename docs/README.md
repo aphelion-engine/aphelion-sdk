@@ -1,14 +1,16 @@
-# Aphelion Plugin SDK documentation
+# Using the Aphelion SDK
 
-Editor nodes, audio, inspector UI, windows, docks and commands are documented in the [Editor SDK guide](editor.md). New plugins use `aphelion_sdk.editor`.
-
-Guides for writing, packaging, and installing plugins that run inside Aphelion Editor.
+Start with the [first-plugin tutorial](../README.md#install-and-run-your-first-plugin).
+All new examples use the product-specific `aphelion_sdk.editor` API.
 
 | Guide | Contents |
-|---|---|
-| [Authoring](authoring.md) | `VideoEffectPlugin`, properties, discovery |
-| [Widgets](widgets.md) | Panels, dialogs, host primitives, PyQt6 |
-| [API reference](api.md) | Public `aphelion_sdk` surface |
-| [Packaging](packaging.md) | `aphelion-sdk build`, entry points, drop-in install |
+| --- | --- |
+| [Authoring nodes](authoring.md) | Local setup, video effects, properties, arbitrary sockets and multiple outputs |
+| [Audio](audio.md) | Audio processors, data formats and custom routing |
+| [Custom UI](widgets.md) | Inspector sections, property windows, controls and native PyQt6 |
+| [Editor extensions](extensions.md) | Docks, commands and undoable graph edits |
+| [API reference](api.md) | Classes, signatures, defaults and return values |
+| [Packaging](packaging.md) | Install, distribute and reload your plugins |
+| [Compatibility and troubleshooting](editor.md) | Product namespaces, migration and diagnostics |
 
-The editor that hosts these plugins is documented in [aphelion-editor/docs](../../aphelion-editor/docs/README.md).
+Runnable source files are in [examples](../examples).
